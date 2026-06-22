@@ -2,9 +2,21 @@ import { createHash, randomUUID } from "crypto";
 import bcrypt from "bcryptjs";
 import { cookies } from "next/headers";
 import { prisma } from "@/lib/prisma";
+import { AUTH_COOKIE_NAME } from "@/lib/auth-constants";
 
-export const AUTH_COOKIE_NAME = "quiz-auth-token";
+export { AUTH_COOKIE_NAME };
 const THIRTY_DAYS_IN_SECONDS = 60 * 60 * 24 * 30;
+
+export class AuthenticationError extends Error {
+  constructor() {
+    super("Authentication required");
+    this.name = "AuthenticationError";
+  }
+}
+
+export function isAuthenticationError(error: unknown): error is AuthenticationError {
+  return error instanceof AuthenticationError;
+}
 
 export function hashAuthToken(token: string) {
   return createHash("sha256").update(token).digest("hex");
@@ -59,7 +71,8 @@ export function clearAuthCookie(cookieStore: CookieStore) {
 }
 
 export async function getCurrentUser() {
-  const token = cookies().get(AUTH_COOKIE_NAME)?.value;
+  const cookieStore = await cookies();
+  const token = cookieStore.get(AUTH_COOKIE_NAME)?.value;
 
   if (!token) {
     return null;
@@ -89,14 +102,15 @@ export async function getAuthenticatedUserOrThrow() {
   const user = await getCurrentUser();
 
   if (!user) {
-    throw new Error("UNAUTHENTICATED");
+    throw new AuthenticationError();
   }
 
   return user;
 }
 
 export async function revokeCurrentSession() {
-  const token = cookies().get(AUTH_COOKIE_NAME)?.value;
+  const cookieStore = await cookies();
+  const token = cookieStore.get(AUTH_COOKIE_NAME)?.value;
 
   if (!token) {
     return;

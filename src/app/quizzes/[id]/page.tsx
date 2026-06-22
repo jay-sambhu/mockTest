@@ -10,7 +10,6 @@ interface Question {
   id: number;
   text: string;
   quizId: number;
-  correctOptionId: number | null;
   options: Array<{
     id: number;
     text: string;
@@ -81,31 +80,29 @@ export default function QuizPage() {
   };
 
   const handleSubmit = async () => {
-    // Calculate score
-    let correctCount = 0;
-    quiz!.questions.forEach((question) => {
-      const userAnswer = answers[question.id];
-      if (userAnswer === question.correctOptionId) {
-        correctCount++;
-      }
-    });
-
-    setScore(correctCount);
     setIsCompleted(true);
 
-    // Submit attempt to API
     try {
-      await fetch("/api/attempts", {
+      const response = await fetch("/api/attempts", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          quizId: quizId,
-          score: correctCount,
-          totalQuestions: quiz!.questions.length,
+          quizId,
+          answers,
         }),
       });
+
+      if (!response.ok) {
+        const payload = await response.json();
+        throw new Error(payload.error || "Failed to submit quiz attempt");
+      }
+
+      const result = await response.json();
+      setScore(result.score);
     } catch (err) {
       console.error("Failed to submit quiz attempt:", err);
+      setError(err instanceof Error ? err.message : "Failed to submit quiz");
+      setIsCompleted(false);
     }
   };
 

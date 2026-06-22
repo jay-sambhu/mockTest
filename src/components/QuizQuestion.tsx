@@ -2,7 +2,6 @@ interface QuestionWithOptions {
   id: number;
   text: string;
   quizId: number;
-  correctOptionId: number | null;
   options: Array<{
     id: number;
     text: string;

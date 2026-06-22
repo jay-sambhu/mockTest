@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { handleRouteError } from "@/lib/api-errors";
 import { NextResponse } from "next/server";
 
 export async function GET() {
@@ -27,9 +28,6 @@ export async function GET() {
       recentAttempt,
     });
   } catch (error) {
-    return NextResponse.json(
-      { error: "Failed to load stats" },
-      { status: 500 }
-    );
+    return handleRouteError(error, "Failed to load stats");
   }
 }

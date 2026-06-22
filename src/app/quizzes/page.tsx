@@ -89,12 +89,11 @@ export default function QuizzesPage() {
         <p className="section-subtitle">Edit or delete quizzes you own using the buttons below.</p>
         <div className="button-row" style={{ marginTop: "1rem" }}>
           {quizzes.slice(0, 3).map((quiz) => (
-            <>
-              <Link key={`edit-${quiz.id}`} className="link-button link-button-primary" href={`/quizzes/${quiz.id}`}>
+            <div key={quiz.id} className="button-row">
+              <Link className="link-button link-button-primary" href={`/quizzes/${quiz.id}/edit`}>
                 Edit {quiz.title}
               </Link>
               <button
-                key={`delete-${quiz.id}`}
                 className="button button-secondary"
                 type="button"
                 onClick={async () => {
@@ -109,7 +108,7 @@ export default function QuizzesPage() {
               >
                 Delete
               </button>
-            </>
+            </div>
           ))}
         </div>
       </section>

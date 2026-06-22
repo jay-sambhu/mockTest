@@ -1,52 +1,75 @@
 import { prisma } from "@/lib/prisma";
 import { getAuthenticatedUserOrThrow } from "@/lib/auth";
+import { handleRouteError } from "@/lib/api-errors";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(request: NextRequest) {
   try {
-    const { quizId, score, totalQuestions } = await request.json();
+    const { quizId, answers } = await request.json();
     const currentUser = await getAuthenticatedUserOrThrow();
 
-    if (!quizId || score === undefined || !totalQuestions) {
+    if (!quizId || !answers || typeof answers !== "object") {
       return NextResponse.json(
-        { error: "Missing required fields" },
+        { error: "quizId and answers are required" },
         { status: 400 }
       );
+    }
+
+    const quiz = await prisma.quiz.findUnique({
+      where: { id: Number(quizId) },
+      include: {
+        questions: {
+          select: { id: true, correctOptionId: true },
+        },
+      },
+    });
+
+    if (!quiz) {
+      return NextResponse.json({ error: "Quiz not found" }, { status: 404 });
+    }
+
+    if (quiz.questions.length === 0) {
+      return NextResponse.json({ error: "Quiz has no questions" }, { status: 400 });
+    }
+
+    let score = 0;
+
+    for (const question of quiz.questions) {
+      const userAnswer = answers[question.id] ?? answers[String(question.id)];
+
+      if (userAnswer === question.correctOptionId) {
+        score++;
+      }
     }
 
     const attempt = await prisma.quizAttempt.create({
       data: {
         userId: currentUser.id,
-        quizId: Number(quizId),
-        score: Number(score),
-        totalQuestions: Number(totalQuestions),
+        quizId: quiz.id,
+        score,
+        totalQuestions: quiz.questions.length,
       },
     });
 
-    return NextResponse.json(attempt, { status: 201 });
-  } catch (error) {
     return NextResponse.json(
-      { error: "Failed to create quiz attempt" },
-      { status: 500 }
+      {
+        ...attempt,
+        score,
+        totalQuestions: quiz.questions.length,
+      },
+      { status: 201 }
     );
+  } catch (error) {
+    return handleRouteError(error, "Failed to create quiz attempt");
   }
 }
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
-    const userId = request.nextUrl.searchParams.get("userId");
-    const quizId = request.nextUrl.searchParams.get("quizId");
-
-    const where: {
-      userId?: number;
-      quizId?: number;
-    } = {};
-
-    if (userId) where.userId = Number(userId);
-    if (quizId) where.quizId = Number(quizId);
+    const currentUser = await getAuthenticatedUserOrThrow();
 
     const attempts = await prisma.quizAttempt.findMany({
-      where,
+      where: { userId: currentUser.id },
       include: {
         user: { select: { id: true, name: true } },
         quiz: { select: { id: true, title: true } },
@@ -56,9 +79,6 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(attempts);
   } catch (error) {
-    return NextResponse.json(
-      { error: "Failed to fetch attempts" },
-      { status: 500 }
-    );
+    return handleRouteError(error, "Failed to fetch attempts");
   }
 }

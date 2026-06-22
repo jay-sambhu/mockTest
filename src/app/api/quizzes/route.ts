@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { getAuthenticatedUserOrThrow } from "@/lib/auth";
+import { handleRouteError } from "@/lib/api-errors";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET() {
@@ -17,10 +18,7 @@ export async function GET() {
     });
     return NextResponse.json(quizzes);
   } catch (error) {
-    return NextResponse.json(
-      { error: "Failed to fetch quizzes" },
-      { status: 500 }
-    );
+    return handleRouteError(error, "Failed to fetch quizzes");
   }
 }
 
@@ -97,9 +95,6 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(quiz, { status: 201 });
   } catch (error) {
-    return NextResponse.json(
-      { error: "Failed to create quiz" },
-      { status: 500 }
-    );
+    return handleRouteError(error, "Failed to create quiz");
   }
 }

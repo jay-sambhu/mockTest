@@ -1,36 +1,49 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Quiz Master
+
+A full-stack quiz platform built with Next.js, PostgreSQL, and Prisma. Create quizzes, take them with server-side scoring, and track your results.
+
+## Features
+
+- User registration and session-based authentication
+- Create, edit, and delete quizzes with multiple-choice questions
+- Take quizzes with progress tracking and instant results
+- Server-side answer validation (answers never exposed to the client)
+- Personal attempt history
+- Responsive UI with Tailwind CSS
 
 ## Getting Started
 
-First, run the development server:
+See [SETUP.md](./SETUP.md) for full setup instructions.
 
 ```bash
+npm install
+./setup-db.sh
+npx prisma db seed   # optional
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Scripts
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+| Command | Description |
+|---------|-------------|
+| `npm run dev` | Start development server |
+| `npm run build` | Production build |
+| `npm run start` | Start production server |
+| `npm run lint` | Run ESLint |
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Project Structure
 
-## Learn More
+```
+src/
+  app/           # Pages and API routes (App Router)
+  components/    # React components
+  lib/           # Auth, Prisma, helpers
+  middleware.ts  # Route protection
+prisma/
+  schema.prisma  # Database schema
+  seed.js        # Sample data
+```
 
-To learn more about Next.js, take a look at the following resources:
+## Deploy
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Deploy to Vercel or Railway with your Supabase `DATABASE_URL` and `DIRECT_URL` environment variables configured.

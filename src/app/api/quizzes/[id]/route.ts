@@ -1,9 +1,10 @@
 import { prisma } from "@/lib/prisma";
-import { getAuthenticatedUserOrThrow } from "@/lib/auth";
+import { getAuthenticatedUserOrThrow, getCurrentUser } from "@/lib/auth";
+import { handleRouteError } from "@/lib/api-errors";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(
-  request: NextRequest,
+  _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
@@ -33,12 +34,30 @@ export async function GET(
       return NextResponse.json({ error: "Quiz not found" }, { status: 404 });
     }
 
-    return NextResponse.json(quiz);
+    const currentUser = await getCurrentUser();
+    const isOwner = currentUser?.id === quiz.userId;
+
+    const sanitizedQuiz = {
+      ...quiz,
+      questions: quiz.questions.map((question) => {
+        if (isOwner) {
+          return question;
+        }
+
+        return {
+          id: question.id,
+          text: question.text,
+          quizId: question.quizId,
+          options: question.options,
+          createdAt: question.createdAt,
+          updatedAt: question.updatedAt,
+        };
+      }),
+    };
+
+    return NextResponse.json(sanitizedQuiz);
   } catch (error) {
-    return NextResponse.json(
-      { error: "Failed to fetch quiz" },
-      { status: 500 }
-    );
+    return handleRouteError(error, "Failed to fetch quiz");
   }
 }
 
@@ -145,15 +164,12 @@ export async function PUT(
 
     return NextResponse.json(quiz);
   } catch (error) {
-    return NextResponse.json(
-      { error: "Failed to update quiz" },
-      { status: 500 }
-    );
+    return handleRouteError(error, "Failed to update quiz");
   }
 }
 
 export async function DELETE(
-  request: NextRequest,
+  _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
@@ -177,9 +193,6 @@ export async function DELETE(
 
     return NextResponse.json({ message: "Quiz deleted successfully" });
   } catch (error) {
-    return NextResponse.json(
-      { error: "Failed to delete quiz" },
-      { status: 500 }
-    );
+    return handleRouteError(error, "Failed to delete quiz");
   }
 }

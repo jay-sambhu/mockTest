@@ -4,6 +4,7 @@ import {
   setAuthCookie,
   verifyPassword,
 } from "@/lib/auth";
+import { handleRouteError } from "@/lib/api-errors";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(request: NextRequest) {
@@ -55,9 +56,6 @@ export async function POST(request: NextRequest) {
     setAuthCookie(response.cookies, token, expiresAt);
     return response;
   } catch (error) {
-    return NextResponse.json(
-      { error: "Failed to log in" },
-      { status: 500 }
-    );
+    return handleRouteError(error, "Failed to log in");
   }
 }

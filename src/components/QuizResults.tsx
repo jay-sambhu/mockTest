@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 interface QuizResultsProps {
   score: number;
   totalQuestions: number;
@@ -52,12 +54,12 @@ export function QuizResults({
           <h3 className="section-title">Next steps</h3>
           <div className="divider" />
           <div className="button-row">
-            <a className="link-button link-button-primary" href="/quizzes">
+            <Link className="link-button link-button-primary" href="/quizzes">
               View quizzes
-            </a>
-            <a className="link-button link-button-secondary" href="/">
+            </Link>
+            <Link className="link-button link-button-secondary" href="/">
               Back home
-            </a>
+            </Link>
           </div>
         </aside>
       </div>
