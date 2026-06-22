@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { useParams, useRouter } from "next/navigation";
 
 interface QuestionDraft {
   text: string;
@@ -15,13 +15,52 @@ const createEmptyQuestion = (): QuestionDraft => ({
   correctOptionIndex: 0,
 });
 
-export default function NewQuizPage() {
+export default function EditQuizPage() {
+  const params = useParams();
   const router = useRouter();
+  const quizId = Number(params.id);
+
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [questions, setQuestions] = useState<QuestionDraft[]>([createEmptyQuestion()]);
+  const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const loadQuiz = async () => {
+      try {
+        const response = await fetch(`/api/quizzes/${quizId}`);
+        if (!response.ok) throw new Error("Failed to load quiz");
+        const data = await response.json();
+
+        setTitle(data.title ?? "");
+        setDescription(data.description ?? "");
+        setQuestions(
+          data.questions?.length
+            ? data.questions.map((question: {
+                text: string;
+                options: { id: number; text: string }[];
+                correctOptionId: number | null;
+              }) => ({
+                text: question.text,
+                options: question.options.map((option) => option.text),
+                correctOptionIndex: Math.max(
+                  0,
+                  question.options.findIndex((option) => option.id === question.correctOptionId)
+                ),
+              }))
+            : [createEmptyQuestion()]
+        );
+      } catch (loadError) {
+        setError(loadError instanceof Error ? loadError.message : "Unknown error");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadQuiz();
+  }, [quizId]);
 
   const updateQuestion = (index: number, value: Partial<QuestionDraft>) => {
     setQuestions((current) =>
@@ -56,8 +95,8 @@ export default function NewQuizPage() {
     setIsSubmitting(true);
 
     try {
-      const response = await fetch("/api/quizzes", {
-        method: "POST",
+      const response = await fetch(`/api/quizzes/${quizId}`, {
+        method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           title,
@@ -72,11 +111,10 @@ export default function NewQuizPage() {
 
       if (!response.ok) {
         const payload = await response.json();
-        throw new Error(payload.error || "Failed to create quiz");
+        throw new Error(payload.error || "Failed to update quiz");
       }
 
-      const createdQuiz = await response.json();
-      router.push(`/quizzes/${createdQuiz.id}`);
+      router.push(`/quizzes/${quizId}`);
     } catch (submitError) {
       setError(submitError instanceof Error ? submitError.message : "Unknown error");
     } finally {
@@ -84,69 +122,47 @@ export default function NewQuizPage() {
     }
   };
 
+  if (isLoading) {
+    return <main className="site-container">Loading quiz...</main>;
+  }
+
   return (
     <main className="site-container">
-      <header className="site-header">
-        <div>
-          <span className="pill">Quiz Builder</span>
-          <h1 className="section-title" style={{ marginTop: "0.75rem" }}>
-            Create a new quiz
-          </h1>
-          <p className="section-subtitle">
-            Add a title, creator details, and multiple-choice questions in a SEO-friendly admin flow.
-          </p>
-        </div>
-      </header>
+      <section className="form-card">
+        <span className="pill">Edit quiz</span>
+        <h1 className="section-title" style={{ marginTop: "0.75rem" }}>
+          Update quiz
+        </h1>
 
-      <form className="form-card" onSubmit={handleSubmit}>
-        <div className="card-grid">
+        <form className="question-grid" onSubmit={handleSubmit} style={{ marginTop: "1.5rem" }}>
           <div className="field">
             <label htmlFor="title">Quiz title</label>
-            <input
-              id="title"
-              className="input"
-              value={title}
-              onChange={(event) => setTitle(event.target.value)}
-              placeholder="JavaScript Fundamentals"
-              required
-            />
+            <input className="input" id="title" value={title} onChange={(event) => setTitle(event.target.value)} required />
           </div>
-        </div>
 
-        <div className="field" style={{ marginTop: "1rem" }}>
-          <label htmlFor="description">Description</label>
-          <textarea
-            id="description"
-            className="textarea"
-            value={description}
-            onChange={(event) => setDescription(event.target.value)}
-            placeholder="Describe what this quiz covers"
-          />
-        </div>
-
-        <div className="divider" />
-
-        <div className="site-header" style={{ marginBottom: "1rem" }}>
-          <div>
-            <h2 className="section-title">Questions</h2>
-            <p className="section-subtitle">Each question needs at least two answer options.</p>
+          <div className="field">
+            <label htmlFor="description">Description</label>
+            <textarea className="textarea" id="description" value={description} onChange={(event) => setDescription(event.target.value)} />
           </div>
-          <button className="button button-secondary" type="button" onClick={addQuestion}>
-            Add question
-          </button>
-        </div>
 
-        <div className="question-grid">
+          <div className="divider" />
+
+          <div className="site-header" style={{ marginBottom: "1rem" }}>
+            <div>
+              <h2 className="section-title">Questions</h2>
+              <p className="section-subtitle">Update each question and publish the changes.</p>
+            </div>
+            <button className="button button-secondary" type="button" onClick={addQuestion}>
+              Add question
+            </button>
+          </div>
+
           {questions.map((question, questionIndex) => (
             <section key={questionIndex} className="quiz-card">
               <div className="site-header" style={{ marginBottom: "1rem" }}>
                 <h3 className="section-title">Question {questionIndex + 1}</h3>
                 {questions.length > 1 && (
-                  <button
-                    className="button button-secondary"
-                    type="button"
-                    onClick={() => removeQuestion(questionIndex)}
-                  >
+                  <button className="button button-secondary" type="button" onClick={() => removeQuestion(questionIndex)}>
                     Remove
                   </button>
                 )}
@@ -157,10 +173,7 @@ export default function NewQuizPage() {
                 <textarea
                   className="textarea"
                   value={question.text}
-                  onChange={(event) =>
-                    updateQuestion(questionIndex, { text: event.target.value })
-                  }
-                  placeholder="What is the output of console.log(2 + 2)?"
+                  onChange={(event) => updateQuestion(questionIndex, { text: event.target.value })}
                   required
                 />
               </div>
@@ -172,10 +185,7 @@ export default function NewQuizPage() {
                     <input
                       className="input"
                       value={option}
-                      onChange={(event) =>
-                        updateOption(questionIndex, optionIndex, event.target.value)
-                      }
-                      placeholder={`Answer option ${optionIndex + 1}`}
+                      onChange={(event) => updateOption(questionIndex, optionIndex, event.target.value)}
                       required
                     />
                   </div>
@@ -202,19 +212,19 @@ export default function NewQuizPage() {
               </div>
             </section>
           ))}
-        </div>
 
-        {error && <p style={{ color: "#b42318", marginTop: "1rem" }}>{error}</p>}
+          {error && <p style={{ color: "#b42318" }}>{error}</p>}
 
-        <div className="button-row" style={{ marginTop: "1.25rem" }}>
-          <button className="button button-primary" type="submit" disabled={isSubmitting}>
-            {isSubmitting ? "Creating quiz..." : "Publish quiz"}
-          </button>
-          <button className="button button-secondary" type="button" onClick={() => router.push("/") }>
-            Cancel
-          </button>
-        </div>
-      </form>
+          <div className="button-row">
+            <button className="button button-primary" type="submit" disabled={isSubmitting}>
+              {isSubmitting ? "Saving..." : "Save changes"}
+            </button>
+            <button className="button button-secondary" type="button" onClick={() => router.push(`/quizzes/${quizId}`)}>
+              Cancel
+            </button>
+          </div>
+        </form>
+      </section>
     </main>
   );
 }

@@ -34,7 +34,11 @@ export async function createAuthSession(userId: number) {
   return { token, expiresAt };
 }
 
-export function setAuthCookie(cookieStore: ReturnType<typeof cookies>, token: string, expiresAt: Date) {
+type CookieStore = {
+  set: (name: string, value: string, options: Record<string, unknown>) => void;
+};
+
+export function setAuthCookie(cookieStore: CookieStore, token: string, expiresAt: Date) {
   cookieStore.set(AUTH_COOKIE_NAME, token, {
     httpOnly: true,
     sameSite: "lax",
@@ -44,7 +48,7 @@ export function setAuthCookie(cookieStore: ReturnType<typeof cookies>, token: st
   });
 }
 
-export function clearAuthCookie(cookieStore: ReturnType<typeof cookies>) {
+export function clearAuthCookie(cookieStore: CookieStore) {
   cookieStore.set(AUTH_COOKIE_NAME, "", {
     httpOnly: true,
     sameSite: "lax",

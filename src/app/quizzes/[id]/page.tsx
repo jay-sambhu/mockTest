@@ -168,7 +168,7 @@ export default function QuizPage() {
 
   return (
     <main className="site-container">
-      <QuizHeader quizTitle={quiz.title} userName={participantName || participantEmail} onExit={handleExit} />
+      <QuizHeader quizTitle={quiz.title} userName="" onExit={handleExit} />
 
       <QuizQuestion
         question={question}

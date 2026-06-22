@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { QuizList } from "@/components/QuizList";
 import Link from "next/link";
+import { AuthBar } from "@/components/AuthBar";
 
 interface Quiz {
   id: number;
@@ -26,14 +27,18 @@ export default function QuizzesPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const refreshQuizzes = async () => {
+    const response = await fetch("/api/quizzes");
+    if (!response.ok) throw new Error("Failed to fetch quizzes");
+    const data = await response.json();
+    setQuizzes(data);
+  };
+
   useEffect(() => {
     const fetchQuizzes = async () => {
       try {
         setIsLoading(true);
-        const response = await fetch("/api/quizzes");
-        if (!response.ok) throw new Error("Failed to fetch quizzes");
-        const data = await response.json();
-        setQuizzes(data);
+        await refreshQuizzes();
       } catch (err) {
         setError(err instanceof Error ? err.message : "Unknown error");
       } finally {
@@ -43,6 +48,19 @@ export default function QuizzesPage() {
 
     fetchQuizzes();
   }, []);
+
+  const handleDelete = async (quizId: number) => {
+    const response = await fetch(`/api/quizzes/${quizId}`, {
+      method: "DELETE",
+    });
+
+    if (!response.ok) {
+      const payload = await response.json();
+      throw new Error(payload.error || "Failed to delete quiz");
+    }
+
+    await refreshQuizzes();
+  };
 
   return (
     <main className="site-container">
@@ -54,15 +72,47 @@ export default function QuizzesPage() {
           </h1>
           <p className="section-subtitle">Select a quiz to begin and track your score.</p>
         </div>
-        <div className="button-row">
-          <Link className="link-button link-button-secondary" href="/quizzes/new">
-            Create quiz
-          </Link>
-          <Link className="link-button link-button-secondary" href="/">
-            Back home
-          </Link>
-        </div>
+        <AuthBar />
       </header>
+
+      <div className="button-row" style={{ marginBottom: "1rem" }}>
+        <Link className="link-button link-button-secondary" href="/quizzes/new">
+          Create quiz
+        </Link>
+        <Link className="link-button link-button-secondary" href="/">
+          Back home
+        </Link>
+      </div>
+
+      <section className="panel" style={{ marginBottom: "1rem" }}>
+        <h2 className="section-title">Quiz management</h2>
+        <p className="section-subtitle">Edit or delete quizzes you own using the buttons below.</p>
+        <div className="button-row" style={{ marginTop: "1rem" }}>
+          {quizzes.slice(0, 3).map((quiz) => (
+            <>
+              <Link key={`edit-${quiz.id}`} className="link-button link-button-primary" href={`/quizzes/${quiz.id}`}>
+                Edit {quiz.title}
+              </Link>
+              <button
+                key={`delete-${quiz.id}`}
+                className="button button-secondary"
+                type="button"
+                onClick={async () => {
+                  if (confirm(`Delete ${quiz.title}?`)) {
+                    try {
+                      await handleDelete(quiz.id);
+                    } catch (deleteError) {
+                      setError(deleteError instanceof Error ? deleteError.message : "Unknown error");
+                    }
+                  }
+                }}
+              >
+                Delete
+              </button>
+            </>
+          ))}
+        </div>
+      </section>
 
       {error && <div>{error}</div>}
 

@@ -1,5 +1,6 @@
 const { PrismaPg } = require("@prisma/adapter-pg");
 const { PrismaClient } = require("@prisma/client");
+const bcrypt = require("bcryptjs");
 
 const connectionString =
   process.env.DIRECT_URL || process.env.DATABASE_URL || "";
@@ -19,6 +20,7 @@ async function main() {
     data: {
       email: "admin@quizapp.com",
       name: "Quiz Admin",
+      passwordHash: await bcrypt.hash("Password123!", 10),
     },
   });
 
