@@ -1,6 +1,28 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import Link from "next/link";
+import { AuthBar } from "@/components/AuthBar";
+
+interface HomeStats {
+  quizCount: number;
+  questionCount: number;
+  attemptCount: number;
+  userCount: number;
+  recentQuiz: { id: number; title: string } | null;
+  recentAttempt: { score: number; totalQuestions: number; quiz: { title: string } } | null;
+}
 
 export default function HomePage() {
+  const [stats, setStats] = useState<HomeStats | null>(null);
+
+  useEffect(() => {
+    fetch("/api/stats")
+      .then((response) => response.json())
+      .then((data) => setStats(data))
+      .catch(() => setStats(null));
+  }, []);
+
   return (
     <main className="site-container">
       <header className="site-header">
@@ -17,14 +39,7 @@ export default function HomePage() {
           </p>
         </div>
 
-        <div className="button-row">
-          <Link className="link-button link-button-primary" href="/quizzes/new">
-            Create quiz
-          </Link>
-          <Link className="link-button link-button-secondary" href="/quizzes">
-            Browse quizzes
-          </Link>
-        </div>
+        <AuthBar />
       </header>
 
       <section className="hero">
@@ -38,17 +53,26 @@ export default function HomePage() {
 
             <div className="meta-grid" style={{ marginTop: "1.25rem" }}>
               <div className="stats-card">
-                <strong>SEO ready</strong>
-                <p className="muted">Metadata, Open Graph, and semantic structure.</p>
+                <strong>{stats?.quizCount ?? "--"} quizzes</strong>
+                <p className="muted">Published in the database.</p>
               </div>
               <div className="stats-card">
-                <strong>Database backed</strong>
-                <p className="muted">Prisma models, route handlers, and seeded demo data.</p>
+                <strong>{stats?.questionCount ?? "--"} questions</strong>
+                <p className="muted">Ready for learner sessions.</p>
               </div>
               <div className="stats-card">
-                <strong>Responsive UI</strong>
-                <p className="muted">Layouts that adapt cleanly across desktop and mobile.</p>
+                <strong>{stats?.attemptCount ?? "--"} attempts</strong>
+                <p className="muted">Completed responses stored safely.</p>
               </div>
+            </div>
+
+            <div className="button-row" style={{ marginTop: "1.25rem" }}>
+              <Link className="link-button link-button-primary" href="/quizzes/new">
+                Create quiz
+              </Link>
+              <Link className="link-button link-button-secondary" href="/quizzes">
+                Browse quizzes
+              </Link>
             </div>
           </div>
 
@@ -69,6 +93,18 @@ export default function HomePage() {
                 <p className="muted">Add a new quiz with questions and options.</p>
               </Link>
             </nav>
+
+            <div className="divider" />
+            <p className="muted">
+              {stats?.recentQuiz
+                ? `Latest quiz: ${stats.recentQuiz.title}`
+                : "No quizzes yet."}
+            </p>
+            <p className="muted">
+              {stats?.recentAttempt
+                ? `Latest score: ${stats.recentAttempt.score}/${stats.recentAttempt.totalQuestions} on ${stats.recentAttempt.quiz.title}`
+                : "No quiz attempts yet."}
+            </p>
           </aside>
         </div>
       </section>

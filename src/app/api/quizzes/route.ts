@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { getAuthenticatedUserOrThrow } from "@/lib/auth";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET() {
@@ -25,38 +26,22 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
-    const {
-      title,
-      description,
-      creatorName,
-      creatorEmail,
-      questions = [],
-    } = await request.json();
+    const { title, description, questions = [] } = await request.json();
+    const currentUser = await getAuthenticatedUserOrThrow();
 
-    if (!title || !creatorEmail) {
+    if (!title) {
       return NextResponse.json(
-        { error: "Title and creatorEmail are required" },
+        { error: "Title is required" },
         { status: 400 }
       );
     }
-
-    const creator = await prisma.user.upsert({
-      where: { email: creatorEmail },
-      create: {
-        email: creatorEmail,
-        name: creatorName?.trim() || "Quiz Creator",
-      },
-      update: creatorName?.trim()
-        ? { name: creatorName.trim() }
-        : {},
-    });
 
     const quiz = await prisma.$transaction(async (transaction) => {
       const createdQuiz = await transaction.quiz.create({
         data: {
           title: title.trim(),
           description: description?.trim() || null,
-          userId: creator.id,
+          userId: currentUser.id,
         },
       });
 

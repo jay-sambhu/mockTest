@@ -36,8 +36,6 @@ export default function QuizPage() {
   const [answers, setAnswers] = useState<Record<number, number>>({});
   const [isCompleted, setIsCompleted] = useState(false);
   const [score, setScore] = useState(0);
-  const [participantName, setParticipantName] = useState("");
-  const [participantEmail, setParticipantEmail] = useState("");
   const [hasStarted, setHasStarted] = useState(false);
 
   useEffect(() => {
@@ -101,8 +99,6 @@ export default function QuizPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          participantName,
-          participantEmail,
           quizId: quizId,
           score: correctCount,
           totalQuestions: quiz!.questions.length,
@@ -137,35 +133,10 @@ export default function QuizPage() {
           <h1 className="section-title" style={{ marginTop: "0.75rem" }}>
             {quiz.title}
           </h1>
-          <p className="section-subtitle">{quiz.description ?? "Start this quiz by adding your name and email."}</p>
+          <p className="section-subtitle">{quiz.description ?? "Start this quiz using your logged-in account."}</p>
 
           <form onSubmit={handleStartQuiz} className="question-grid" style={{ marginTop: "1.5rem" }}>
-            <div className="card-grid">
-              <div className="field">
-                <label htmlFor="participantName">Your name</label>
-                <input
-                  id="participantName"
-                  className="input"
-                  value={participantName}
-                  onChange={(event) => setParticipantName(event.target.value)}
-                  placeholder="Jane Doe"
-                />
-              </div>
-
-              <div className="field">
-                <label htmlFor="participantEmail">Your email</label>
-                <input
-                  id="participantEmail"
-                  className="input"
-                  type="email"
-                  value={participantEmail}
-                  onChange={(event) => setParticipantEmail(event.target.value)}
-                  placeholder="jane@example.com"
-                  required
-                />
-              </div>
-            </div>
-
+            <p className="muted">Your authenticated account will be used automatically for the attempt.</p>
             <div className="button-row">
               <button className="button button-primary" type="submit">
                 Start quiz

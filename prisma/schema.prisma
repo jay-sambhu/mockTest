@@ -10,8 +10,10 @@ model User {
   id    Int     @id @default(autoincrement())
   email String  @unique
   name  String
+  passwordHash String
   quizzes Quiz[]
   attempts QuizAttempt[]
+  sessions Session[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -56,4 +58,13 @@ model QuizAttempt {
   score Int
   totalQuestions Int
   completedAt DateTime @default(now())
+}
+
+model Session {
+  id        Int      @id @default(autoincrement())
+  tokenHash String   @unique
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
 }

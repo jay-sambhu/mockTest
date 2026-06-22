@@ -11,7 +11,11 @@ interface Quiz {
   userId: number;
   createdAt: Date;
   updatedAt: Date;
-  _count?: {
+  user: {
+    name: string;
+    email: string;
+  };
+  _count: {
     questions: number;
     attempts: number;
   };

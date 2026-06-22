@@ -1,16 +1,11 @@
 import { prisma } from "@/lib/prisma";
+import { getAuthenticatedUserOrThrow } from "@/lib/auth";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(request: NextRequest) {
   try {
-    const {
-      userId,
-      participantName,
-      participantEmail,
-      quizId,
-      score,
-      totalQuestions,
-    } = await request.json();
+    const { quizId, score, totalQuestions } = await request.json();
+    const currentUser = await getAuthenticatedUserOrThrow();
 
     if (!quizId || score === undefined || !totalQuestions) {
       return NextResponse.json(
@@ -19,33 +14,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    let resolvedUserId = Number(userId);
-
-    if (!resolvedUserId) {
-      if (!participantEmail) {
-        return NextResponse.json(
-          { error: "participantEmail is required when userId is not provided" },
-          { status: 400 }
-        );
-      }
-
-      const participant = await prisma.user.upsert({
-        where: { email: participantEmail },
-        create: {
-          email: participantEmail,
-          name: participantName?.trim() || "Quiz Participant",
-        },
-        update: participantName?.trim()
-          ? { name: participantName.trim() }
-          : {},
-      });
-
-      resolvedUserId = participant.id;
-    }
-
     const attempt = await prisma.quizAttempt.create({
       data: {
-        userId: resolvedUserId,
+        userId: currentUser.id,
         quizId: Number(quizId),
         score: Number(score),
         totalQuestions: Number(totalQuestions),
