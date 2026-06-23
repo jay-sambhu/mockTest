@@ -46,4 +46,22 @@ prisma/
 
 ## Deploy
 
+### Vercel
+1. Push the repository to GitHub.
+2. In Vercel, import the GitHub repository.
+3. Set the following Environment Variables in the Vercel dashboard:
+   - `NEXT_PUBLIC_SUPABASE_URL` – your Supabase project URL
+   - `NEXT_PUBLIC_SUPABASE_ANON_KEY` – your Supabase anon key
+   - `DATABASE_URL` – direct PostgreSQL connection string (e.g., from Supabase)
+4. Vercel will automatically detect the `vercel.json` and use the Next.js build.
+5. After deployment, the site will be live at the generated Vercel URL.
+
+### Railway (optional)
+1. Create a new Railway project and link the repository.
+2. Add the same environment variables as above.
+3. Railway will run `npm install && npm run build` and start the app.
+
+After deployment, ensure the site loads correctly and analytics fire as expected.
+
+
 Deploy to Vercel or Railway with your Supabase `DATABASE_URL` and `DIRECT_URL` environment variables configured.
