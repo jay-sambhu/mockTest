@@ -1,7 +1,7 @@
 
 
 import type { Metadata } from "next";
-import { Analytics } from "@vercel/analytics/react";
+
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import AnalyticsProvider from "@/components/AnalyticsProvider";
@@ -54,9 +54,12 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${geistSans.variable} ${geistMono.variable}`}>
       <body className="app-shell gradient-bg">
-        <AnalyticsProvider>{children}</AnalyticsProvider>
-      <Analytics />
-        </body>
+        <a href="#main" className="skip-link">Skip to content</a>
+        <AnalyticsProvider>
+          <main id="main">{children}</main>
+        </AnalyticsProvider>
+        <Analytics />
+      </body>
     </html>
   );
 }
